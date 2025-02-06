@@ -18,7 +18,7 @@ public class Task {
 	private long id;
 	
 	@NotBlank
-	private String tittle;
+	private String title;
 	
 	private String description;
 	private String status;
@@ -32,12 +32,12 @@ public class Task {
 		this.id = id;
 	}
 	
-	public String getTittle() {
-		return tittle;
+	public String getTitle() {
+		return title;
 	}
 	
-	public void setTittle(String tittle) {
-		this.tittle = tittle;
+	public void setTitle(String tittle) {
+		this.title = tittle;
 	}
 	
 	public String getDescription() {
@@ -66,7 +66,7 @@ public class Task {
 	
 	@Override
 	public String toString() {
-		return "Task [id=" + id + ", tittle=" + tittle + ", description=" + description + ", status=" + status
+		return "Task [id=" + id + ", tittle=" + title + ", description=" + description + ", status=" + status
 				+ ", createDate=" + createDate + "]";
 	}
 	

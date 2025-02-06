@@ -86,7 +86,7 @@ public class TaskController {
 		
 		return taskService.findById(id)
 				.map(existingTask -> {
-					Optional.ofNullable(task.getTittle()).ifPresent(existingTask::setTittle);
+					Optional.ofNullable(task.getTitle()).ifPresent(existingTask::setTitle);
 					Optional.ofNullable(task.getDescription()).ifPresent(existingTask::setDescription);
 					Optional.ofNullable(task.getStatus()).ifPresent(existingTask::setStatus);
 					Optional.ofNullable(task.getCreateDate()).ifPresent(existingTask::setCreateDate);

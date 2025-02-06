@@ -4,10 +4,12 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import com.learning.taskmanagementapi.model.entity.Task;
 import com.learning.taskmanagementapi.repository.TaskRepository;
 
+@Service
 public class TaskServiceImpl implements TaskService {
 	
 	@Autowired
@@ -33,7 +35,7 @@ public class TaskServiceImpl implements TaskService {
 		Optional<Task> taskOptional = taskRepository.findById(id);
 		if(taskOptional.isPresent()) {
 			Task taskToUpdate = taskOptional.get();
-			taskToUpdate.setTittle(task.getTittle());
+			taskToUpdate.setTitle(task.getTitle());
 			taskToUpdate.setDescription(task.getDescription());
 			taskToUpdate.setStatus(task.getStatus());
 			taskToUpdate.setCreateDate(task.getCreateDate());
