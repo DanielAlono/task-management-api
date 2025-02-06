@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.learning.taskmanagementapi.exception.TaskNotFoundException;
 import com.learning.taskmanagementapi.model.entity.Task;
 import com.learning.taskmanagementapi.service.TaskService;
 
@@ -27,6 +28,8 @@ import jakarta.validation.Valid;
 @RestController
 @RequestMapping("/tasks")
 public class TaskController {
+	
+	public static final String TASK_NOT_FOUND_MESSAGE = "Task with ID %d not found.";
 
 	@Autowired
 	TaskService taskService;
@@ -38,13 +41,12 @@ public class TaskController {
 	
 	@GetMapping("/{id}")
 	public ResponseEntity<Task> findTaskById(@PathVariable Long id) {
-		Optional<Task> taskOptional = taskService.findById(id);
-		
-		if(taskOptional.isPresent())
-			return ResponseEntity.ok(taskOptional.orElseThrow());
-		
-		return ResponseEntity.notFound().build();
+	    Task task = taskService.findById(id)
+	        .orElseThrow(() -> new TaskNotFoundException(String.format(TASK_NOT_FOUND_MESSAGE, id)));
+	    
+	    return ResponseEntity.ok(task);
 	}
+
 	
 	@PostMapping
 	public ResponseEntity<?> createTask(@Valid @RequestBody Task task, BindingResult result) {
@@ -63,58 +65,45 @@ public class TaskController {
 		if (taskOptional.isPresent())
 			return ResponseEntity.status(HttpStatus.OK).body(taskOptional.get());
 		
-		return ResponseEntity.notFound().build();
+		throw new TaskNotFoundException(String.format(TASK_NOT_FOUND_MESSAGE, id));
 				
 	}
 	
 	@DeleteMapping("/{id}")
-	public ResponseEntity<Task> deleteTask(@PathVariable Long id){
-		Optional<Task> taskOptional = taskService.findById(id);
-		if(taskOptional.isPresent()) {
-			taskService.deleteTask(id);
-			return ResponseEntity.noContent().build();
-		}
-		
-		return ResponseEntity.notFound().build();
+	public ResponseEntity<Void> deleteTask(@PathVariable Long id) {
+	    Task task = taskService.findById(id)
+	        .orElseThrow(() -> new TaskNotFoundException(String.format(TASK_NOT_FOUND_MESSAGE, id)));
+	    
+	    taskService.deleteTask(task.getId());
+	    return ResponseEntity.noContent().build();
 	}
+
 	
 	@PatchMapping("/{id}")
 	public ResponseEntity<?> partialUpdateTask(@Valid @RequestBody Task task, BindingResult result, @PathVariable Long id) {
 		if (result.hasErrors())
 			return validation(result);
 		
-		Optional<Task> taskOptional = taskService.findById(id);
-		
-		if(taskOptional.isPresent()) {
-			Task taskToUpdate = taskOptional.get();
-			
-			if (task.getTittle() != null)
-				taskToUpdate.setTittle(task.getTittle());
-			
-			if (task.getDescription() != null)
-				taskToUpdate.setDescription(task.getDescription());
-			
-			if (task.getStatus() != null)
-				taskToUpdate.setStatus(task.getStatus());
-			
-			if (task.getCreateDate() != null)
-				taskToUpdate.setCreateDate(task.getCreateDate());
-			
-			taskService.updateTask(id, taskToUpdate);
-			return ResponseEntity.status(HttpStatus.OK).body(taskToUpdate);
-		}
-		
-		return ResponseEntity.notFound().build();
+		return taskService.findById(id)
+				.map(existingTask -> {
+					Optional.ofNullable(task.getTittle()).ifPresent(existingTask::setTittle);
+					Optional.ofNullable(task.getDescription()).ifPresent(existingTask::setDescription);
+					Optional.ofNullable(task.getStatus()).ifPresent(existingTask::setStatus);
+					Optional.ofNullable(task.getCreateDate()).ifPresent(existingTask::setCreateDate);
+					
+					taskService.updateTask(id, existingTask);
+					return ResponseEntity.status(HttpStatus.OK).body(existingTask);
+				}).orElseThrow(() -> new TaskNotFoundException(String.format(TASK_NOT_FOUND_MESSAGE, id)));
 	}
 	
-	private ResponseEntity<?> validation(BindingResult result) {
-		Map<String, String> errors = new HashMap<>();
-		
-		result.getFieldErrors().forEach(err -> {
-			errors.put(err.getField(), "The field " + err.getField() + " " + err.getDefaultMessage());
-		});
-		
-		return ResponseEntity.badRequest().body(errors);
-		
+	private ResponseEntity<Map<String, String>> validation(BindingResult result) {
+	    Map<String, String> errors = new HashMap<>();
+	    
+	    result.getFieldErrors().forEach(err ->
+	        errors.put(err.getField(), err.getDefaultMessage())
+	    );
+	    
+	    return ResponseEntity.badRequest().body(errors);
 	}
+
 }
